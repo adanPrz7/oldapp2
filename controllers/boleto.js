@@ -1,0 +1,646 @@
+//Importar dependecias y modulos
+const mongoosePagination = require("mongoose-pagination");
+const nodemailer = require('nodemailer');
+
+//Importar modelo
+const Boleto = require("../models/Boleto");
+const Participante = require("../models/Participante");
+
+const fs = require("fs");
+const PDFDocument = require("../libs/pdftable");
+const path = require("path");
+
+//Acciones de prueba
+const pruebaBoleto = (req, res) => {
+    return res.status(200).send({
+        message: "Mensaje enviado desde: controllers/boleto.js",
+        usuario: req.user
+    });
+}
+
+//Registro de boleto
+const register = async (req, res) => {
+    //Obtener los datos
+    let params = req.body;
+
+    //Comprobador que llegan los datos bien
+    if (!params.parti) {
+        return res.status(400).json({
+            message: "Es necesario el usuario",
+            status: "error"
+        });
+    }
+
+    let total = "0000000".concat((await Boleto.countDocuments() + 1));
+    let auxFolio = total.substring(total.length - 6);
+
+    Boleto.find({ folio: auxFolio }).then(async (boleto) => {
+        if (boleto && boleto.length >= 1) return res.status(400).send({ status: "error", message: "Ya existe un folio" });
+
+        /* return res.status(200).send({
+            status: "Success",
+            message: "Boleto was saved",
+            folio: auxFolio,
+            params,
+            boleto
+        }); */
+        params.folio = auxFolio;
+        let newBoleto = new Boleto(params);
+        //newBoleto.parti = params.userId;
+
+        newBoleto.save().then((boletoStore) => {
+            if (!boletoStore) return res.satus(400).send({ status: "error", message: "No se pudo guardar el cupon electronico" });
+
+            return res.status(200).send({
+                status: "Success",
+                message: "cupon electronico guardado",
+                boletoStore,
+                folio: auxFolio,
+                params
+            });
+        }).catch((error) => {
+            return res.status(500).send({
+                status: "error",
+                message: "error en la consulta"
+            });
+        });
+    });
+}
+
+const updateBol = (req, res) => {
+    let params = req.body;
+
+    if (!params.bolId || !params.numSpheres) {
+        return res.status(400).send({
+            status: "error",
+            message: "faltan datos"
+        });
+    }
+
+    //Participante.findByIdAndUpdate({ _id: params.userId }, params, { new: true }).then(async (partiUpdate) => {
+    params.isFull = true;
+    params.update_at = Date.now;
+    Boleto.findOneAndUpdate({
+        $and: [
+            { _id: params.bolId },
+            { isFull: false }
+        ]
+    }, params, { new: true }).then(async (boletoStore) => {
+        if (!boletoStore) return res.status(400).send({ status: "error", message: "Error al actualizar" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Bol was update",
+            boletoStore
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const updateBol2 = (req, res) => {
+    let params = req.body;
+
+    if (!params.surname || !params.namePart || !params.bolId) {
+        return res.status(400).send({
+            status: "error",
+            message: "faltan datos"
+        });
+    }
+
+    //Participante.findByIdAndUpdate({ _id: params.userId }, params, { new: true }).then(async (partiUpdate) => {
+    Boleto.findOneAndUpdate({
+        $and: [
+            { _id: params.bolId },
+            { isFull: true }
+        ]
+    }, params, { new: true }).then(async (boletoStore) => {
+        if (!boletoStore) return res.status(400).send({ status: "error", message: "Error al actualizar" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Bol was update",
+            boletoStore
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const getNextBol = (req, res) => {
+    let params = req.body;
+
+    if (!params.userId) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+
+    Boleto.findOne({
+        $and: [
+            { parti: params.userId },
+            { isFull: false }
+        ]
+    }).then(async (boletoStore) => {
+        if (!boletoStore) return res.status(200).send({ status: "error", message: "No hay" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "it was finded",
+            boletoStore
+        })
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const getNumberBol = async (req, res) => {
+    let params = req.body;
+    if (!params.userId) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+    let parti = await Participante.findById({ _id: params.userId }).select("-created_at -__v -money -ticketCount -ticketsAssigned");
+    let bolList = await Boleto.find({ parti: params.userId });
+    let bolTrue = bolList.filter(x => x.isFull == true).length;
+    let bolFalse = bolList.filter(x => x.isFull == false).length;
+
+
+    return res.status(200).send({
+        status: "success",
+        message: "lista",
+        parti,
+        true: bolTrue,
+        false: bolFalse,
+        total: bolList.length
+
+    });
+}
+
+const getAllByIdFalse = async (req, res) => {
+    let params = req.body;
+    if (!params.userId) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+
+    await Boleto.find({
+        $and: [
+            { parti: params.userId },
+            { isFull: false }
+        ]
+    }).then((listBol) => {
+        if (!listBol) return res.status(200).send({ status: "error", message: "No hay" });
+
+        let auxList = listBol.length > 10 ? listBol.slice(0, 10) : listBol;
+        return res.status(200).send({
+            status: "success",
+            message: "Lista",
+            bolList: auxList
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const getAllByIdTrue = async (req, res) => {
+    let params = req.body;
+    if (!params.userId) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+
+    Boleto.find({
+        $and: [
+            { parti: params.userId },
+            { isFull: true }
+        ]
+    }).then(async (listBol) => {
+        if (!listBol) return res.status(200).send({ status: "error", message: "No hay" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Lista",
+            bolList: await listBol
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const sendEmailFolios = async (req, res) => {
+    let params = req.body;
+    if (!params.userId) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+
+    Boleto.find({
+        $and: [
+            { parti: params.userId },
+            { isFull: true }
+        ]
+    }).then(async (listBol) => {
+        if (!listBol) return res.status(200).send({ status: "error", message: "No hay" });
+
+        let auxList = await listBol;
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.hostinger.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: 'folios@comprayganaconplazadelsol.com.mx',
+                pass: 'A|z$8ps2'
+            }, tls: {
+                rejectUnauthorized: false,
+            }
+        });
+
+        let html = `<div>Registro de tus cupones electronicos</div><br/>`
+        for (let i = 0; i < auxList.length; i++) {
+            html += `<p>Folio: ${auxList[i].folio} / Numero de pelotas: ${auxList[i].numSpheres}</p>`
+        }
+
+        const info = await transporter.sendMail({
+            from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
+            to: params.email,
+            bbc: 'compraygana@comprayganaconplazadelsol.com.mx',
+            subject: 'Tus cupones digitales de compra y gana - Plaza del Sol',
+            html: html
+        });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Lista",
+            info: info.messageId
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const sendEmailFolios2 = async (req, res) => {
+    let params = req.body;
+    if (!params.userId) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+
+    Boleto.find({
+        $and: [
+            { parti: params.userId },
+            { isFull: true }
+        ]
+    }).then(async (listBol) => {
+        if (!listBol) return res.status(200).send({ status: "error", message: "No hay" });
+
+        let auxList = await listBol;
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.hostinger.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: 'folios@comprayganaconplazadelsol.com.mx',
+                pass: 'A|z$8ps2'
+            }, tls: {
+                rejectUnauthorized: false,
+            }
+        });
+
+        let html = `<div>Registro de tus cupones electronicos</div><br/>`
+        for (let i = 0; i < auxList.length; i++) {
+            html += `<p>Folio: ${auxList[i].folio} / Numero de pelotas: ${auxList[i].numSpheres}</p>`
+        }
+
+        const info = await transporter.sendMail({
+            from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
+            to: 'adan.prz.7@gmail.com',
+            subject: 'Tus cupones digitales de compra y gana - Plaza del Sol',
+            html: html
+        });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Lista",
+            info: info.messageId
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const createPDFDinamic = (req, res) => {
+    let params = req.body;
+    if (!params.email) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+    // Create The PDF document
+    const doc = new PDFDocument();
+    // Pipe the PDF into a patient's file
+    doc.pipe(fs.createWriteStream(`PDF/${params.email}.pdf`));
+
+    // Add the header - https://pspdfkit.com/blog/2019/generate-invoices-pdfkit-node/
+    doc
+        .image("logo.png", 10, 5, { width: 150 })
+        .fillColor("#444444")
+        .fontSize(20)
+        .text("Tus cupones digitales de compra y gana", 130, 57)
+        .text("Plaza del Sol", 250, 80)
+        .moveDown();
+
+    // Create the table - https://www.andronio.me/2017/09/02/pdfkit-tables/
+    const table = {
+        headers: ["Folio", "Nombre de registro", "Número de pelotas"],
+        rows: []
+    };
+
+    /* Participante.find({email: params.email}).select("email isFull qrCode namePart phone surname").then(async (auxPart) => {
+        if (!auxPart) return res.status(404).send({ status: "error", message: "No encontrado" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Econtrado",
+            part,
+            auxPart
+        });
+
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    }); */
+
+    Boleto.find({
+        $and: [
+            { email: params.email },
+            { isFull: true }
+        ]
+    }).then(async (listBol) => {
+        if (!listBol) return res.status(200).send({ status: "error", message: "No hay" });
+
+        // Add the patients to the table
+        for (const bol of listBol) {
+            table.rows.push([bol.folio, bol.namePart + " " + bol.surname, bol.numSpheres]);
+        }
+
+        doc
+            .fontSize(12)
+            .text("Correo electrónico: " + listBol[0].email, 200, 110)
+            .text("Teléfono: " + listBol[0].phone, 200, 130)
+        // Draw the table
+        doc.moveDown().table(table, 10, 160, { width: 590 });
+
+        // Finalize the PDF and end the stream
+        doc.end();
+        return res.status(200).send({
+            status: "success",
+            message: "Hecho"
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const getPDF = (req, res) => {
+    let params = req.params;
+    console.log(params);
+    if (!params.email) {
+        return res.status(400).send({
+            status: "error",
+            message: "falta el dato"
+        });
+    }
+
+    const filePath = `PDF/${params.email}.pdf`;
+    fs.stat(filePath, (error, exists) => {
+        if (!exists) return res.status(404).send({ status: "error", message: "No existe el archivo" });
+        //Devolver un file
+        return res.sendFile(path.resolve(filePath));
+    })
+}
+
+const deleteMany = (req, res) => {
+    let params = req.body;
+
+    if (!params.idParti) {
+        return res.status(400).send({
+            status: "error",
+            message: "Faltan datos por ingresar"
+        });
+    }
+
+    Boleto.deleteMany({ "parti": params.idParti }).then((boletosDeleted) => {
+        if (!boletosDeleted) return res.status(500).send({ status: "error", message: "No se pudo eliminar el participante" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Eliminado",
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const getAllK = (req, res) => {
+    Boleto.find().then(async (boletosList) => {
+        if (!boletosList) return res.status(500).send({ status: "error", message: "No existen" });
+
+        return res.status(200).send({
+            status: "success",
+            boletosList: boletosList
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const getBoletosBypart = (req, res) => {
+    let params = req.body;
+
+    if (!params._id) {
+        return res.status(400).send({
+            status: "error",
+            message: "Faltan datos por ingresar"
+        });
+    }
+
+    Boleto.find({ parti: params._id }).then(async (boletosStore) => {
+        if (!boletosStore) return res.status(500).send({ status: "error", message: "No existen" });
+
+        return res.status(200).send({
+            status: "success",
+            boletosCount: boletosStore.length
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+//Registro de boleto
+const registerOne = async (req, res) => {
+    //Obtener los datos
+    let params = req.body;
+
+    //Comprobador que llegan los datos bien
+    if (!params.parti || !params.fol) {
+        return res.status(400).json({
+            message: "Es necesario el usuario",
+            status: "error"
+        });
+    }
+
+    let total = "0000000".concat((params.fol));
+    let auxFolio = total.substring(total.length - 6);
+
+    Boleto.find({ folio: auxFolio }).then(async (boleto) => {
+        if (boleto && boleto.length >= 1) return res.status(400).send({ status: "error", message: "Ya existe un folio" });
+
+        /* return res.status(200).send({
+            status: "Success",
+            message: "Boleto was saved",
+            folio: auxFolio,
+            params,
+            boleto
+        }); */
+        params.folio = auxFolio;
+        let newBoleto = new Boleto(params);
+        //newBoleto.parti = params.userId;
+
+        newBoleto.save().then((boletoStore) => {
+            if (!boletoStore) return res.satus(400).send({ status: "error", message: "No se pudo guardar el cupon electronico" });
+
+            return res.status(200).send({
+                status: "Success",
+                message: "cupon electronico guardado",
+                boletoStore,
+                folio: auxFolio,
+                params
+            });
+        }).catch((error) => {
+            return res.status(500).send({
+                status: "error",
+                message: "error en la consulta"
+            });
+        });
+    });
+}
+
+const updateTablaDinamica = async (req, res) => {
+    try {
+        const { registros, parti, part } = req.body; // [["000011", "10"], ["000012", "20"]]
+
+        console.log(registros);
+        console.log(parti);
+        console.log(part);
+        if (!Array.isArray(registros) || !parti) {
+            return res.status(400).json({ message: 'Datos incompletos o formato inválido' });
+        }
+
+        // Filtrar registros con valor válido en numeroPelota
+        /* const registrosValidos = registros.filter(([folio, numeroPelota]) =>
+            numeroPelota && numeroPelota.trim() !== ""
+        ); */
+
+        const registrosValidos = registros.filter(([folio, numeroPelota]) =>
+            numeroPelota && /^\d+$/.test(numeroPelota.trim())
+        );
+
+        const ignorados = registros.length - registrosValidos.length;
+
+        if (registrosValidos.length === 0) {
+            return res.status(400).json({ message: 'No hay registros válidos para actualizar' });
+        }
+
+        // Recorremos todos los pares y hacemos updateOne por folio
+        const resultados = await Promise.all(
+            registrosValidos.map(async ([folio, numSpheres]) => {
+                const result = await Boleto.updateOne(
+                    { folio, parti }, // filtro
+                    { $set: { numSpheres, isFull: true, phone: part.phone, surname: part.surname, namePart: part.namePart } } // actualización
+                    //{ $set: { numSpheres, phone: part.phone, surname: part.surname, namePart: part.namePart} } // Para Pruebas
+                );
+                return { folio, actualizado: result.modifiedCount > 0 };
+            })
+        );
+
+        const actualizados = resultados.filter(r => r.actualizado).length;
+
+        res.status(200).json({
+            message: 'Actualización completada',
+            total: registros.length,
+            actualizados,
+            ignorados,
+            resultados
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al actualizar los registros' });
+    }
+}
+
+module.exports = {
+    pruebaBoleto,
+    register,
+    updateBol,
+    getNextBol,
+    getNumberBol,
+    getAllByIdFalse,
+    getAllByIdTrue,
+    sendEmailFolios,
+    getPDF,
+    createPDFDinamic,
+    deleteMany,
+    getAllK,
+    getBoletosBypart,
+    registerOne,
+    updateBol2,
+    updateTablaDinamica
+}
