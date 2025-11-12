@@ -69,7 +69,7 @@ const login = (req, res) => {
     }
 
     let time = new Date().toLocaleString('es-MX', {hour: '2-digit', hour12: false});
-    console.log(time);
+    time = time-6;
     //Buscar en la bbdd si existe
     User.findOne({ email: params.email })
         //.select({"password":0})
