@@ -1,5 +1,7 @@
 const {Schema, model} = require("mongoose");
 const { default: isEmail } = require("validator/lib/isEmail");
+const moment = require('moment-timezone');
+
 const UserSchema = Schema({
     nameUser: {
         type: String,
@@ -23,7 +25,7 @@ const UserSchema = Schema({
     },
     created_at:{
         type: Date,
-        default: Date.now
+        default: () => moment().tz('America/Mexico_City').toDate()
     }
 });
 

@@ -1,4 +1,5 @@
 const {Schema, model} = require("mongoose");
+const moment = require('moment-timezone');
 
 const ParticipanteSchema = Schema({
     namePart: String,
@@ -24,7 +25,7 @@ const ParticipanteSchema = Schema({
     },
     created_at:{
         type: Date,
-        default: Date.now
+        default: () => moment().tz('America/Mexico_City').toDate()
     }
 });
 

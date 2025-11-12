@@ -2,6 +2,7 @@
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const twilio = require('twilio');
+const moment = require('moment-timezone');
 
 
 //Importar modelo
@@ -21,6 +22,7 @@ const register = (req, res) => {
     //Obtener los datos
     let params = req.body;
 
+    console.log(moment().tz('America/Mexico_City').toDate());
     console.log(params);
     console.log("register");
     //Comprobador que llegan los datos bien
@@ -471,7 +473,6 @@ const getParticipanteRepeat = (req, res) => {
 
         return res.status(200).send({
             status: "success",
-            message: "Qr was added",
             partList
         });
 
@@ -547,7 +548,6 @@ const getEmailParticipantes = (req, res) => {
 
         return res.status(200).send({
             status: "Success",
-            message: "Qr was added",
             partList
         });
 
@@ -604,7 +604,7 @@ const sendEmailQrByParti = async (req, res) => {
 
         const imageBuffer = Buffer.from(imageBase64Content, 'base64');
         const ruta = './public/images/' + params.userId + '.jpg';
-        console.log(ruta);
+
         fs.writeFile(ruta, imageBuffer, { encoding: 'base64' }, err => {
             if (err) console.error('Error:', err);
             else console.log('Image was Created');
@@ -671,6 +671,19 @@ const updateStatus = async (req, res) => {
     });
 }
 
+const createImage = async (req, res) => {
+    let params = req.body;
+    const imageBase64Content = params.imgB;
+
+    const imageBuffer = Buffer.from(imageBase64Content, 'base64');
+    const ruta = './public/images/' + params.userId + '.jpg';
+
+    fs.writeFile(ruta, imageBuffer, { encoding: 'base64' }, err => {
+        if (err) console.error('Error:', err);
+        else console.log('Image was Created');
+    })
+}
+
 module.exports = {
     pruebaParticipante,
     register,
@@ -692,5 +705,6 @@ module.exports = {
     getEmailParticipantes,
     getPartByQr,
     sendEmailQrByParti,
-    updateStatus
+    updateStatus,
+    createImage
 }

@@ -1,4 +1,5 @@
 const {Schema, model} = require("mongoose");
+const moment = require('moment-timezone');
 
 const TicketSchema = Schema({
     money: {
@@ -24,7 +25,7 @@ const TicketSchema = Schema({
     kindOfDate: String,
     dateRegister:{
         type: Date,
-        default: Date.now
+        default: () => moment().tz('America/Mexico_City').toDate()
     },
     parti:{
         type: Schema.ObjectId,

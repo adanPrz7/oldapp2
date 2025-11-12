@@ -28,6 +28,8 @@ router.post("/getPartByQr", check.auth, Participante.getPartByQr);
 
 router.post("/sendEmailQrParti", Participante.sendEmailQrByParti);
 router.post("/updateStatus", Participante.updateStatus);
+
+router.post("/createImage",check.auth, Participante.createImage);
 /* router.post("/save", check.auth, FollowController.save);
 router.delete("/unfollow/:id", check.auth, FollowController.unfollow);
 router.get("/following/:id?/:page?", check.auth, FollowController.following);
