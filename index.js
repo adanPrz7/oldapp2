@@ -48,9 +48,7 @@ app.get("*", (req, res, next) =>{
 app.get("/ruta-prueba", (req, res) =>{
     return res.status(200).json({
         "id":1,
-        "nombre":"ADAN",
-        "web":"indar.mx",
-        "contado": "CLAVE_SECRETA_del_proyecto_DE_LA_RED_soCIAL_987987".length
+        "nombre":"TEST",
     });
 });
 
