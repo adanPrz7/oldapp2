@@ -30,7 +30,7 @@ const TicketRouter = require("./routes/tickets");
 const ContadorRouter = require("./routes/contador");
 
 //
-//app.use("/", express.static('dist', {redirect: false}));
+app.use("/", express.static('dist', {redirect: false}));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.use("/api/user", UserRouter);
@@ -40,9 +40,9 @@ app.use("/api/ticket", TicketRouter);
 app.use("/api/contador", ContadorRouter);
 
 //
-/* app.get("*", (req, res, next) =>{
+app.get("*", (req, res, next) =>{
     return res.sendFile(path.resolve("dist/index.html"));
-}); */
+});
 
 //Ruta de prueba
 app.get("/ruta-prueba", (req, res) =>{
