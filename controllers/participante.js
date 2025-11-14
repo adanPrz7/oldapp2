@@ -692,7 +692,7 @@ const createImage = async (req, res) => {
     })
 }
 
-const ResendEmailQr = async (req, res) => {
+const resendEmailQr = async (req, res) => {
     let params = req.body;
 
     if (!params.userId) return res.status(400).send({ status: "error", message: "Falta informacion" });
@@ -711,15 +711,15 @@ const ResendEmailQr = async (req, res) => {
                 rejectUnauthorized: false,
             }
         });
-        const imageBase64Content = params.imgB;
+        //const imageBase64Content = params.imgB;
 
-        const imageBuffer = Buffer.from(imageBase64Content, 'base64');
+        //const imageBuffer = Buffer.from(imageBase64Content, 'base64');
         const ruta = './public/images/' + params.userId + '.jpg';
         console.log(ruta);
-        fs.writeFile(ruta, imageBuffer, { encoding: 'base64' }, err => {
+        /* fs.writeFile(ruta, imageBuffer, { encoding: 'base64' }, err => {
             if (err) console.error('Error:', err);
             else console.log('Image was Created');
-        })
+        }) */
 
 
 
@@ -730,7 +730,7 @@ const ResendEmailQr = async (req, res) => {
         <br/>
         <br/>
         <br/>
-        <a href="https://comprayganaconplazadelsol.com.mx/QrCode/${imageBase64Content}" style="text-decoration: none;background: #fff833ff;padding: 10px;border-radius: 16px;">Registra tus Folios Digitales</a>
+        <a href="https://comprayganaconplazadelsol.com.mx/QrCode/${params.userId}" style="text-decoration: none;background: #fff833ff;padding: 10px;border-radius: 16px;">Registra tus Folios Digitales</a>
         <br/>
         <br/>
         <br/>
@@ -741,13 +741,13 @@ const ResendEmailQr = async (req, res) => {
         const info = await transporter.sendMail({
             from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
             to: part.email,
+            bcc: "support@comprayganaconplazadelsol.com.mx",
             subject: 'Tus cupones digitales de compra y gana - Plaza del Sol',
             html: html,
             attachments: [{
                 cid: "unique@nodemailer.com",
                 filename: 'my-image.png',
-                content: Buffer.from(imageBase64Content, 'base64'),
-                contentDisposition: 'inline',
+                path: ruta
             },
             ],
         });
@@ -811,5 +811,6 @@ module.exports = {
     sendEmailQrByParti,
     updateStatus,
     createImage,
-    getParti
+    getParti,
+    resendEmailQr
 }

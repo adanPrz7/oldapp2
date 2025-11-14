@@ -31,6 +31,7 @@ router.post("/updateStatus", Participante.updateStatus);
 
 router.post("/createImage",check.auth, Participante.createImage);
 
+router.post("/resendEmailQr", check.auth, Participante.resendEmailQr);
 router.post("/getParti", Participante.getParti);
 /* router.post("/save", check.auth, FollowController.save);
 router.delete("/unfollow/:id", check.auth, FollowController.unfollow);
