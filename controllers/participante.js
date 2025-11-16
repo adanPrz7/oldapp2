@@ -327,13 +327,13 @@ const sendEmailQr = async (req, res) => {
         });
         const imageBase64Content = params.imgB;
 
-        const imageBuffer = Buffer.from(imageBase64Content, 'base64');
+        //const imageBuffer = Buffer.from(imageBase64Content, 'base64');
         const ruta = './public/images/' + params.userId + '.jpg';
         console.log(ruta);
-        fs.writeFile(ruta, imageBuffer, { encoding: 'base64' }, err => {
+        /* fs.writeFile(ruta, imageBuffer, { encoding: 'base64' }, err => {
             if (err) console.error('Error:', err);
             else console.log('Image was Created');
-        })
+        }) */
 
 
 
@@ -711,17 +711,7 @@ const resendEmailQr = async (req, res) => {
                 rejectUnauthorized: false,
             }
         });
-        //const imageBase64Content = params.imgB;
-
-        //const imageBuffer = Buffer.from(imageBase64Content, 'base64');
         const ruta = './public/images/' + params.userId + '.jpg';
-        console.log(ruta);
-        /* fs.writeFile(ruta, imageBuffer, { encoding: 'base64' }, err => {
-            if (err) console.error('Error:', err);
-            else console.log('Image was Created');
-        }) */
-
-
 
         const html = `<div>Ingresa a las siguientes ligas para descargar la App de Plaza del Sol y poder leer tu codigo QR</div>
         <br/>
@@ -741,7 +731,7 @@ const resendEmailQr = async (req, res) => {
         const info = await transporter.sendMail({
             from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
             to: part.email,
-            bcc: "support@comprayganaconplazadelsol.com.mx",
+            bcc: "adan_perez_7@hotmail.com",
             subject: 'Tus cupones digitales de compra y gana - Plaza del Sol',
             html: html,
             attachments: [{
