@@ -35,7 +35,7 @@ const register = (req, res) => {
 
     let newParti = new Participante(params);
     newParti.origen = "Modulo";
-    newParti.isValidate = true;
+    //anewParti.isValidate = true;
 
     newParti.save().then(async (parti) => {
         if (!parti) return res.status(400).send({ status: "error", message: "No se ha podido guardar el participante" });
@@ -99,6 +99,7 @@ const addQr = (req, res) => {
         });
     }
 
+    params.isValidate = true;
     Participante.find({ qrCode: params.qrCode }).then(async (partList) => {
         if (partList && partList.length >= 1) {
             return res.status(400).send({
@@ -778,6 +779,37 @@ const getParti = (req, res) => {
     });
 }
 
+const getEmailParticipantesNoList = (req, res) => {
+    let params = req.body;
+
+    if (!params.email && !params.phone) return res.status(400).send({ status: "error", message: "Falta informacion" });
+
+    Participante.find({
+        $or: [
+            { email: params.email },
+            { phone: params.phone }
+        ]
+    }).select("_id email namePart surname isValidate").then(async (partList) => {
+        if (!partList) {
+            return res.status(400).send({
+                status: "error",
+                message: "No hay"
+            });
+        }
+
+        return res.status(200).send({
+            status: "Success",
+            partList
+        });
+
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
 module.exports = {
     pruebaParticipante,
     register,
@@ -802,5 +834,6 @@ module.exports = {
     updateStatus,
     createImage,
     getParti,
-    resendEmailQr
+    resendEmailQr,
+    getEmailParticipantesNoList
 }

@@ -33,6 +33,7 @@ router.post("/createImage",check.auth, Participante.createImage);
 
 router.post("/resendEmailQr", check.auth, Participante.resendEmailQr);
 router.post("/getParti", Participante.getParti);
+router.post("/getEmailParticipantesNoList", check.auth, Participante.getEmailParticipantesNoList);
 /* router.post("/save", check.auth, FollowController.save);
 router.delete("/unfollow/:id", check.auth, FollowController.unfollow);
 router.get("/following/:id?/:page?", check.auth, FollowController.following);
