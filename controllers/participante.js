@@ -635,7 +635,7 @@ const sendEmailQrByParti = async (req, res) => {
         const info = await transporter.sendMail({
             from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
             to: part.email,
-            subject: 'Preregisto - Plaza del Sol',
+            subject: 'Preregistro - Plaza del Sol',
             html: html,
             attachments: [{
                 cid: "unique@nodemailer.com",
