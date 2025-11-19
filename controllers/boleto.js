@@ -78,7 +78,7 @@ const updateBol = (req, res) => {
     }
     //Participante.findByIdAndUpdate({ _id: params.userId }, params, { new: true }).then(async (partiUpdate) => {
     params.isFull = true;
-    params.update_at = Date.now();
+    //params.update_at = Date.now();
     Boleto.findOneAndUpdate({
         $and: [
             { _id: params.bolId },
