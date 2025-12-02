@@ -77,7 +77,7 @@ const login = (req, res) => {
             if (!user) return res.status(404).send({ status: "Error", message: "No te has identificado correctamente", time: time });
             if(user.role != "Admin"){
                 
-                if(time < 11 || time >= 21)
+                if(time < 11 || time > 22)
                     return res.status(404).send({ status: "Error", message: "No te has identificado correctamente (Time)", time: time});
             }
             //Comprobar su contraseña
