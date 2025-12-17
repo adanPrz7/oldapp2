@@ -75,11 +75,11 @@ const login = (req, res) => {
         //.select({"password":0})
         .then((user) => {
             if (!user) return res.status(404).send({ status: "Error", message: "No te has identificado correctamente", time: time });
-            // if(user.role != "Admin"){
+            /* if(user.role != "Admin"){
                 
-            //     if(time < 11 || time > 22)
-            //         return res.status(404).send({ status: "Error", message: "No te has identificado correctamente (Time)", time: time});
-            // }
+                if(time < 11 || time >= 21)
+                    return res.status(404).send({ status: "Error", message: "No te has identificado correctamente (Time)", time: time});
+            } */
             //Comprobar su contraseña
             const pwd = bcrypt.compareSync(params.password, user.password)
             if (!pwd) {

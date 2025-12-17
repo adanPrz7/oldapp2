@@ -810,6 +810,44 @@ const getEmailParticipantesNoList = (req, res) => {
     });
 }
 
+const getListParticipanteSupport = (req, res) => {
+    Participante.find().then(async (partList) => {
+        if (!partList) return res.status(404).send({ status: "error", message: "No hay participantes" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Econtrado",
+            partList
+        });
+
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+const updateSupport = async (req, res) => {
+    let params = req.body;
+
+    Participante.findByIdAndUpdate({ _id: params.idParti }, params, { new: true }).then(async (partiUpdate) => {
+        if (!partiUpdate) return res.status(500).send({ status: "error", message: "Error al actualizar" });
+
+        return res.status(200).send({
+            status: "success",
+            message: "Validado",
+            partiUpdate
+        });
+    }).catch((error) => {
+        return res.status(500).send({
+            status: "error",
+            message: "error en la consulta"
+        });
+    });
+}
+
+
 module.exports = {
     pruebaParticipante,
     register,
@@ -835,5 +873,6 @@ module.exports = {
     createImage,
     getParti,
     resendEmailQr,
-    getEmailParticipantesNoList
+    getEmailParticipantesNoList,
+    getListParticipanteSupport
 }
