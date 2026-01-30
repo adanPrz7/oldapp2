@@ -356,6 +356,7 @@ const sendEmailQr = async (req, res) => {
         const info = await transporter.sendMail({
             from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
             to: part.email,
+            bcc: "secuencia@pdscyg.com",
             subject: 'Tus cupones digitales de compra y gana - Plaza del Sol',
             html: html,
             attachments: [{
@@ -517,6 +518,7 @@ const sendEmail = async (req, res) => {
     const info = await transporter.sendMail({
         from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
         to: params.email,
+        bcc: "secuencia@pdscyg.com",
         subject: params.asunto,
         html: html
     }).catch((error) => {
@@ -635,6 +637,7 @@ const sendEmailQrByParti = async (req, res) => {
         const info = await transporter.sendMail({
             from: "'Folios' <folios@comprayganaconplazadelsol.com.mx>",
             to: part.email,
+            bcc: "secuencia@pdscyg.com",
             subject: 'Preregistro - Plaza del Sol',
             html: html,
             attachments: [{
